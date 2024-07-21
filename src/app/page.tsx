@@ -1,113 +1,176 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import { useState } from 'react';
+import { fetchImage } from 'src/actions';
+
+const CONSTANTS = {
+  'PS0-TC2001-WHT': [
+    '/front/designLineVersion/v1/regular.jpg',
+    '/lifestyle-poster-1/designLineVersion/v1/regular.jpg',
+    '/lifestyle-poster-2/designLineVersion/v1/regular.jpg',
+    '/lifestyle-poster-3/designLineVersion/v1/regular.jpg',
+  ],
+  'PS1-TC2001-WHT': [
+    '/front/designLineVersion/v1/regular.jpg',
+    '/lifestyle-poster-1/designLineVersion/v1/regular.jpg',
+    '/lifestyle-poster-2/designLineVersion/v1/regular.jpg',
+    '/lifestyle-poster-3/designLineVersion/v1/regular.jpg',
+  ],
+  'S3CWP10-CG124-WHT': [
+    '/aos-canvas-pgw-16x24-lifestyle-front-16/designLineVersion/v1/regular.jpg',
+    '/aos-canvas-pgw-16x24-lifestyle-front-17/designLineVersion/v1/regular.jpg',
+    '/aos-canvas-pgw-16x24-lifestyle-front-18/designLineVersion/v1/regular.jpg',
+  ],
+  'S3CWP11-CG124-WHT': [
+    '/aos-canvas-pgw-16x24-lifestyle-front-16/designLineVersion/v1/regular.jpg',
+    '/aos-canvas-pgw-16x24-lifestyle-front-17/designLineVersion/v1/regular.jpg',
+    '/aos-canvas-pgw-16x24-lifestyle-front-18/designLineVersion/v1/regular.jpg',
+  ],
+  'PLM0-TC2004-WHT': [
+    '/front/designLineVersion/v1/regular.jpg',
+    '/poster-landscape-24x16-lifestyle-01/designLineVersion/v1/regular.jpg',
+    '/poster-landscape-24x16-lifestyle-22/designLineVersion/v1/regular.jpg',
+    '/poster-landscape-24x16-lifestyle-24/designLineVersion/v1/regular.jpg',
+  ],
+  'PLM1-TC2004-WHT': [
+    '/front/designLineVersion/v1/regular.jpg',
+    '/poster-landscape-24x16-lifestyle-01/designLineVersion/v1/regular.jpg',
+    '/poster-landscape-24x16-lifestyle-22/designLineVersion/v1/regular.jpg',
+    '/poster-landscape-24x16-lifestyle-24/designLineVersion/v1/regular.jpg',
+  ],
+  'S3CWP20-CG125-WHT': [
+    '/aos-canvas-pgw-24x16-lifestyle-front-16/designLineVersion/v1/regular.jpg',
+    '/aos-canvas-pgw-24x16-lifestyle-front-17/designLineVersion/v1/regular.jpg',
+    '/aos-canvas-pgw-24x16-lifestyle-front-18/designLineVersion/v1/regular.jpg',
+  ],
+  'S3CWP21-CG125-WHT': [
+    '/aos-canvas-pgw-24x16-lifestyle-front-16/designLineVersion/v1/regular.jpg',
+    '/aos-canvas-pgw-24x16-lifestyle-front-17/designLineVersion/v1/regular.jpg',
+    '/aos-canvas-pgw-24x16-lifestyle-front-18/designLineVersion/v1/regular.jpg',
+  ],
+};
+
+const DOWNLOAD_LINK =
+  'https://cdn.32pt.com/public/sl-prod-od-0/images/retail-products';
+
+const getDownloadLinkSuffix = (
+  accCode?: string | null,
+  productCode?: string | null,
+) => {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
+    accCode &&
+    productCode &&
+    `${DOWNLOAD_LINK}/${accCode}/${accCode}-${productCode}-`
+  );
+};
 
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
+const getImagePrefix = () => {
+  return Object.entries(CONSTANTS).reduce((acc, [key, value]) => {
+    const prefixs = value.map((item) => `${key}${item}`);
+    return acc.concat(...prefixs);
+  }, [] as string[]);
+};
+
+export default function Page() {
+  const [link, setLink] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const getLinkId = () => {
+    try {
+      const url = new URL(link);
+      const retailProductCode = url.searchParams.get('retailProductCode');
+
+      return {
+        accCode: retailProductCode && retailProductCode.split('-')[0],
+        productCode: retailProductCode && retailProductCode.split('-')[1],
+      };
+    } catch (error) {
+      return {
+        retailProductCode: '',
+        productCode: '',
+      };
+    }
+  };
+
+  const suffix = getDownloadLinkSuffix(
+    getLinkId().accCode,
+    getLinkId().productCode,
+  );
+
+  return (
+    <div className="container mx-auto py-6">
+      <div
+        style={{
+          display: 'flex',
+        }}
+      >
+        <input
+          className={'border p-2'}
+          style={{ flex: 1 }}
+          value={link}
+          onChange={(e) => setLink(e.target.value)}
         />
+        <button
+          className={'border p-2 ml-2'}
+          disabled={loading}
+          onClick={async () => {
+            setLoading(true);
+
+            const urls = getImagePrefix().map((prefix) => `${suffix}${prefix}`);
+
+            let images = await Promise.all(urls.map(fetchImage));
+
+            images = images.filter((image) => image !== null) as {
+              url: string;
+              type: string;
+              name: string;
+            }[];
+
+            for (let i = 0; i < images.length; i++) {
+              const a = document.createElement('a');
+
+              a.href = images[i]?.url!;
+              a.download = images[i]?.name!;
+
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+            }
+
+            setLoading(false);
+          }}
+        >
+          {loading ? 'Downloading...' : 'Download'}
+        </button>
       </div>
 
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API.
+      <br />
+      <ul>
+        <li>
+          <p>
+            <strong>Acc:</strong> {getLinkId().accCode}
           </p>
-        </a>
+        </li>
+        <li>
+          <p>
+            <strong>Product:</strong> {getLinkId().productCode}
+          </p>
+        </li>
+      </ul>
+      <br />
 
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+      <ul className="grid grid-cols-4">
+        {suffix &&
+          getImagePrefix().map((prefix) => {
+            return (
+              <li key={prefix}>
+                <a href={`${suffix}${prefix}`} target="_blank" rel="noreferrer">
+                  <img src={`${suffix}${prefix}`} />
+                </a>
+              </li>
+            );
+          })}
+      </ul>
+    </div>
   );
 }
